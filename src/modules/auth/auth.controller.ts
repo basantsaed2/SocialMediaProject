@@ -1,5 +1,7 @@
 import { type Request, type Response, Router } from "express";
 import authService from "./auth.service";
+import { signUpSchema } from "./auth.validation";
+import { BadRequestException } from "../../common/exceptions/app.exception";
 
 const router = Router();
 
@@ -9,7 +11,12 @@ router.post("/login", async (req: Request, res: Response) => {
 });
 
 router.post("/signUp", async (req: Request, res: Response) => {
-    const data = await authService.signUp(req.body);
+    let values = signUpSchema.body.safeParse(req.body)
+
+    if (!values.success) {
+        throw new BadRequestException("Validation Error", values.error)
+    }
+    const data = await authService.signUp(values.data);
     res.json(data);
 });
 
