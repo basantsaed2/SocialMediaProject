@@ -19,6 +19,6 @@ router.post("/signUp", (0, middleware_1.validation)(auth_validation_1.signUpSche
         throw new app_exception_1.BadRequestException("Validation Error", values.error);
     }
     const data = await auth_service_1.default.signUp(values.data);
-    res.json(data);
+    res.json({ message: "User created successfully", data });
 });
 exports.default = router;

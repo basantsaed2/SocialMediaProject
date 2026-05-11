@@ -7,5 +7,6 @@ exports.signUpSchema = {
         name: zod_1.z.string().min(2).max(20),
         email: zod_1.z.email(),
         password: zod_1.z.string().min(6).max(20),
+        phone: zod_1.z.string().min(10).max(15)
     })
 };

@@ -5,4 +5,5 @@ export interface LoginDTO {
 
 export interface SignUpDTO extends LoginDTO {
     name: string;
+    phone: string;
 }

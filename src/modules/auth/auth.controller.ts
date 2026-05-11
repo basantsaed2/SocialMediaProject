@@ -18,7 +18,7 @@ router.post("/signUp", validation(signUpSchema), async (req: Request, res: Respo
         throw new BadRequestException("Validation Error", values.error)
     }
     const data = await authService.signUp(values.data);
-    res.json(data);
+    res.json({ message : "User created successfully", data });
 });
 
 export default router;
