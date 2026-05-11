@@ -1,13 +1,12 @@
 interface AppError {
-    statusCode: number;
+    status: number;
     message: string;
-    stack?: string;
     cause?: unknown;
 }
 
 
 export class ApplicationException extends Error implements AppError {
-    constructor(message: string, public statusCode: number, cause?: unknown) {
+    constructor(message: string, public status: number, cause?: unknown) {
         super(message, { cause });
     }
 }

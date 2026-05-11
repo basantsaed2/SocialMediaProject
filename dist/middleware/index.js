@@ -1,16 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.validation = void 0;
-const validation = (schema) => {
-    return (req, res, next) => {
-        console.log(Object.keys(schema));
-        for (const key of Object.keys(schema)) {
-            if (!schema[key]) {
-                continue;
-            }
-            const values = schema[key].safeParse(req[key]);
-            console.log(values);
-        }
-    };
-};
-exports.validation = validation;
+var validation_middleware_1 = require("./validation.middleware");
+Object.defineProperty(exports, "validation", { enumerable: true, get: function () { return validation_middleware_1.validation; } });

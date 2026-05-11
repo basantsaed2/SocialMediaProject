@@ -2,6 +2,7 @@ import { type Request, type Response, Router } from "express";
 import authService from "./auth.service";
 import { signUpSchema } from "./auth.validation";
 import { BadRequestException } from "../../common/exceptions/app.exception";
+import { validation } from "../../middleware";
 
 const router = Router();
 
@@ -10,7 +11,7 @@ router.post("/login", async (req: Request, res: Response) => {
     res.json(data);
 });
 
-router.post("/signUp", async (req: Request, res: Response) => {
+router.post("/signUp", validation(signUpSchema), async (req: Request, res: Response) => {
     let values = signUpSchema.body.safeParse(req.body)
 
     if (!values.success) {
