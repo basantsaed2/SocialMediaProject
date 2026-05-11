@@ -5,10 +5,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.connectionDB = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
-const config_1 = require("../config");
+const env_service_1 = require("../config/env.service");
 const connectionDB = async () => {
     try {
-        await mongoose_1.default.connect(config_1.env.mongo_url);
+        await mongoose_1.default.connect(env_service_1.env.mongo_url);
         console.log("Connected to MongoDB");
     }
     catch (error) {
