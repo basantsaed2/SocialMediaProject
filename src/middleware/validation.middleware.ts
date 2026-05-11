@@ -4,20 +4,27 @@ import { BadRequestException } from "../common/exceptions/app.exception";
 
 export const validation = (schema: any) => {
     return (req: Request, res: Response, next: NextFunction) => {
-        let validationError: any[] = [];
-        for (let key of Object.keys(schema) as any[]) {
+        const validationErrors: Array<{ key: string; issues: unknown }> = [];
+
+        for (const key of Object.keys(schema) as Array<keyof typeof schema>) {
             if (!schema[key]) {
                 continue;
             }
 
-            let values = schema[key].safeParse(req[key as keyof Request]);
-            if (!values.success) {
-                validationError.push({ key, value: values.error.issue })
+            const value = req[key as keyof Request];
+            const result = schema[key].safeParse(value);
+            if (!result.success) {
+                validationErrors.push({
+                    key: String(key),
+                    issues: result.error.issues,
+                });
             }
         }
-        if (validationError.length > 0) {
-            throw new BadRequestException("Validation error", validationError)
+
+        if (validationErrors.length > 0) {
+            throw new BadRequestException("Validation error", validationErrors);
         }
-        next()
+
+        next();
     }
 }
