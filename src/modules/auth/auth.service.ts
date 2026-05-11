@@ -2,7 +2,8 @@ import {
   ApplicationException,
   BadRequestException,
 } from "../../common/exceptions/app.exception";
-import { hashPassword } from "../../common/utils/hashing";
+import { generateToken } from "../../common/security/security";
+import { comparePassword, hashPassword } from "../../common/utils/hashing";
 import { UserModel } from "../../database";
 import { LoginDTO, SignUpDTO } from "./auth.dto";
 import { IUser } from "./auth.type";
@@ -41,17 +42,23 @@ class AuthService {
     }
   }
 
-  async login(data: LoginDTO): Promise<{ user: any }> {
+  async login(data: LoginDTO): Promise<{ user: any , accessToken: string}> {
     // Simulate user login logic
     const { email, password } = data;
     if (!email || !password) {
       throw new BadRequestException("Email and password are required", 400);
     }
     const user = await UserModel.findOne({ email });
+
     if (!user) {
       throw new BadRequestException("Invalid email or password", 401);
     }
-    return { user };
+    const isMatch = await comparePassword(password, user.password);
+    if (!isMatch) {
+      throw new BadRequestException("Invalid email or password", 401);
+    }
+    const { accessToken } = await generateToken(user);
+    return { user : { id: user._id.toJSON(), name: user.name, email: user.email, phone: user.phone ?? "" } , accessToken};
   }
 }
 
