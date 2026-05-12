@@ -4,20 +4,21 @@ import type { Express } from "express";
 import { globalErrorHandler } from "./middleware/error.middleware";
 import { authRouter } from "./modules";
 import { connectionDB } from "./database/index";
+import { env } from "./config/env.service";
 
-export const bootstrap = async() => {
-    const app: Express = express();
+export const bootstrap = async () => {
+  const app: Express = express();
 
-    await connectionDB();
+  app.use(cors(), express.json());
+  app.use(express.urlencoded({ extended: true }));
 
-    app.use(cors(), express.json());
-    app.use(express.urlencoded({ extended: true }));
-    app.use("/auth", authRouter);
+  await connectionDB();
 
-    app.use(globalErrorHandler);
+  app.use("/auth", authRouter);
 
-    app.listen(3000, () => {
-        console.log("Server is running on port 3000");
-    });
+  app.use(globalErrorHandler);
 
-}
+  app.listen(env.port, () => {
+    console.log(`Server is running on port ${env.port}`);
+  });
+};
