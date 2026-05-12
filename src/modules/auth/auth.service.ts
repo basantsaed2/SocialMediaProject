@@ -4,12 +4,13 @@ import {
   BadRequestException,
 } from "../../common/exceptions/app.exception";
 import { generateToken } from "../../common/security/security";
-import { comparePassword, hashPassword } from "../../common/utils/hashing";
+import { comparePassword, hashPassword } from "../../common/security/hashing";
 import { UserModel } from "../../database";
 import { LoginDTO, SignUpDTO } from "./auth.dto";
 import { HydratedDocument, Model } from "mongoose";
 import { IUser } from "../../common/interfaces";
 import { DatabaseRepository } from "../../database/repository/base.repository";
+import { sendEmail } from "../../common/utils/email/sendemail";
 
 class AuthService {
   private userModel: Model<IUser>;
@@ -22,15 +23,34 @@ class AuthService {
 
   async signUp(data: SignUpDTO): Promise<IUser> {
 
-    let result : HydratedDocument<IUser> = await this.userRepository.create(data);
-    if (result) {
+    const { name, email, password, phone} = data;
+
+    if (!name || !email || !password) {
+      throw new BadRequestException("Name, email, and password are required", 400);
+    }
+
+    const existingUser = await this.userRepository.findOne({ email });
+    if (existingUser) {
       throw new BadRequestException("User already exists", 400);
     }
 
+    const hashedPassword = await hashPassword(password);
+    data.password = hashedPassword;
+
+    let result : HydratedDocument<IUser> = await this.userRepository.create(data);
+    if (!result) {
+      throw new BadRequestException("Failed to create user", 400);
+    }
+
+    await sendEmail({
+      to: email,
+      subject: "Welcome to our app!",
+      html: `<h1>Welcome, ${name}!</h1><p>Thank you for signing up.</p>`,
+    });
     return result;
   }
 
-  async login(data: LoginDTO): Promise<{ user: any , accessToken: string}> {
+  async login(data: LoginDTO): Promise<HydratedDocument<IUser>> {
     // Simulate user login logic
     const { email, password } = data;
     if (!email || !password) {
@@ -45,8 +65,8 @@ class AuthService {
     if (!isMatch) {
       throw new BadRequestException("Invalid email or password", 401);
     }
-    const { accessToken } = await generateToken(user);
-    return { user : { id: user._id.toJSON(), name: user.name, email: user.email, phone: user.phone ?? "" } , accessToken};
+
+    return user;
   }
 }
 
