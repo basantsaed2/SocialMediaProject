@@ -1,13 +1,11 @@
 import bcrypt from 'bcryptjs'
 import { env } from '../../config/env.service';
 
-export const hashPassword = async (password : string) : Promise<string> => {
+export const generateHash = async (plainText: string): Promise<string> => {
     const salt = await bcrypt.genSalt(Number(env.SALT_ROUNDS));
-    const hashedPassword = await bcrypt.hash(password, salt);
-    return hashedPassword;
+    return await bcrypt.hash(plainText, salt);
 }
 
-export const comparePassword = async (password : string, hashPassword : string) : Promise<boolean> => {
-    const isMatch = await bcrypt.compare(password, hashPassword);
-    return isMatch;
+export const verifyHash = async (plainText: string, encryptedText: string): Promise<boolean> => {
+    return await bcrypt.compare(plainText, encryptedText);
 }

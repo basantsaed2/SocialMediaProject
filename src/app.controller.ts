@@ -5,6 +5,7 @@ import { globalErrorHandler } from "./middleware/error.middleware";
 import { authRouter } from "./modules";
 import { connectionDB } from "./database/index";
 import { env } from "./config/env.service";
+import { redisService } from "./common/services/redis.services";
 
 export const bootstrap = async () => {
   const app: Express = express();
@@ -13,6 +14,7 @@ export const bootstrap = async () => {
   app.use(express.urlencoded({ extended: true }));
 
   await connectionDB();
+  await redisService.connect();
 
   app.use("/auth", authRouter);
 

@@ -1,6 +1,6 @@
 import { type Request, type Response, Router } from "express";
 import authService from "./auth.service";
-import { loginSchema, signUpSchema } from "./auth.validation";
+import { loginSchema, signUpSchema, verifyEmailSchema } from "./auth.validation";
 import { BadRequestException } from "../../common/exceptions/app.exception";
 import { validation } from "../../middleware";
 import { SuccessResponse } from "../../common/exceptions/success.response";
@@ -30,6 +30,19 @@ router.post(
     }
     const data = await authService.signUp(values.data);
     return SuccessResponse({ res, message: "User created successfully", data });
+  },
+);
+
+router.post(
+  "/verifyCode",
+  validation(verifyEmailSchema),
+  async (req: Request, res: Response) => {
+    let values = verifyEmailSchema.body.safeParse(req.body);
+    if (!values.success) {
+      throw new BadRequestException("Validation error", values.error.issues);
+    }
+    const data = await authService.verifyEmail(values.data.email, values.data.code);
+    return SuccessResponse({ res, message: "Email verified successfully", data });
   },
 );
 
