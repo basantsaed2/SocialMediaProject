@@ -1,5 +1,5 @@
-import { BadRequestException, NotFoundException } from "../../common/exceptions/app.exception";
-import { generateHash, verifyHash } from "../../common/security/hashing";
+import { BadRequestException, ConflictException, NotFoundException, UnauthorizedException } from "../../common/exceptions/app.exception";
+import { generateHash, verifyHash } from "../../common/security/security";
 import { UserModel } from "../../database";
 import { LoginDTO, SignUpDTO } from "./auth.dto";
 import { HydratedDocument, Model } from "mongoose";
@@ -7,16 +7,22 @@ import { IUser } from "../../common/interfaces";
 import { DatabaseRepository } from "../../database/repository/base.repository";
 import { sendEmail } from "../../common/utils/email/sendemail";
 import { redisService, RedisService } from "../../common/services/redis.services";
+import { TokenService } from "../../common/services/token.services";
+import { ProviderEnum } from "../../common/enums";
+import { env } from "../../config/env.service";
+import { OAuth2Client } from 'google-auth-library';
 
 class AuthService {
   private userModel: Model<IUser>;
   private userRepository: DatabaseRepository<IUser>;
   private redisService: RedisService;
+  private tokenService: TokenService;
 
   constructor() {
     this.userModel = UserModel;
     this.userRepository = new DatabaseRepository(this.userModel);
     this.redisService = redisService;
+    this.tokenService = new TokenService();
   }
 
   async signUp(data: SignUpDTO): Promise<IUser> {
@@ -53,13 +59,13 @@ class AuthService {
     return result;
   }
 
-  async login(data: LoginDTO): Promise<HydratedDocument<IUser>> {
+  async login(data: LoginDTO) {
     // Simulate user login logic
     const { email, password } = data;
     if (!email || !password) {
       throw new BadRequestException("Email and password are required", 400);
     }
-    const user = await this.userRepository.findOne({ email });
+    const user = await this.userRepository.findOne({ email, provider: ProviderEnum.SYSTEM });
 
     if (!user) {
       throw new BadRequestException("Invalid email or password", 401);
@@ -73,7 +79,9 @@ class AuthService {
       throw new BadRequestException("user is not verified");
     }
 
-    return user;
+    const { accessToken, refreshToken } = await this.tokenService.generateToken(user);
+    return { user, accessToken, refreshToken };
+
   }
 
   async verifyEmail(email: string, code: string) {
@@ -108,6 +116,42 @@ class AuthService {
     }
     return user;
   };
+
+  async signupGoogle(token: { idToken: string }) {
+
+    const client = new OAuth2Client();
+    const ticket = await client.verifyIdToken({
+      idToken: token.idToken,
+      audience: env.WEB_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+
+    console.log(payload)
+
+    if (!payload || !payload.email || !payload.sub || !payload.name) {
+      throw new BadRequestException("user is not exist");
+    }
+
+    if (!payload.email_verified) {
+      throw new BadRequestException("email is not verified by google");
+    }
+
+    const userExist = await this.userRepository.findOne({ email: payload.email });
+
+    if (userExist) {
+      return new ConflictException("user is already exist");
+    }
+
+    const user = await this.userRepository.create({
+      name: payload.name, email: payload.email, provider: ProviderEnum.GOOGLE
+    });
+
+    return user;
+
+  };
+
+
 }
 
 export default new AuthService();

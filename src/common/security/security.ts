@@ -1,17 +1,11 @@
-import jwt from "jsonwebtoken";
+import bcrypt from 'bcryptjs'
 import { env } from '../../config/env.service';
 
-export const generateToken = async (user: any) => {
-    const accessToken = jwt.sign(
-        { id: user._id }, 
-        env.JWT_USER_SIGNATURE as string,
-        { expiresIn: env.JWT_EXPIRES_IN as any } 
-    );
-    
-    return { accessToken };
+export const generateHash = async (plainText: string): Promise<string> => {
+    const salt = await bcrypt.genSalt(Number(env.SALT_ROUNDS));
+    return await bcrypt.hash(plainText, salt);
 }
 
-export const decodeToken = async (token: string) => {
-    const decodedToken = jwt.verify(token, env.JWT_USER_SIGNATURE as string);
-    return decodedToken;
+export const verifyHash = async (plainText: string, encryptedText: string): Promise<boolean> => {
+    return await bcrypt.compare(plainText, encryptedText);
 }

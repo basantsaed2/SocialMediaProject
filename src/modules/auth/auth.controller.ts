@@ -46,4 +46,12 @@ router.post(
   },
 );
 
+router.post(
+  "/signup/google",
+  async (req: Request, res: Response) => {
+    const data = await authService.signupGoogle(req.body);
+    return SuccessResponse({ res, message: "user add sucessfully", data });
+  }
+);
+
 export default router;
